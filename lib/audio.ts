@@ -2,6 +2,7 @@ class AudioManager {
   private audioCache: Map<string, string> = new Map() // text → blob URL
   private currentAudio: HTMLAudioElement | null = null
   private _isPlaying: boolean = false
+  playbackRate: number = 1.0
 
   get isPlaying(): boolean {
     return this._isPlaying
@@ -12,14 +13,12 @@ class AudioManager {
     type: 'sentence' | 'word' = 'sentence',
     onEnd?: () => void
   ): Promise<void> {
-    // Stop any currently playing audio
     this.stop()
 
     const cacheKey = `${type}:${text}`
     let blobUrl = this.audioCache.get(cacheKey)
 
     if (!blobUrl) {
-      // Fetch audio from API
       const response = await fetch('/api/tts', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -37,6 +36,7 @@ class AudioManager {
 
     return new Promise((resolve, reject) => {
       const audio = new Audio(blobUrl)
+      audio.playbackRate = this.playbackRate
       this.currentAudio = audio
       this._isPlaying = true
 
@@ -47,7 +47,7 @@ class AudioManager {
         resolve()
       }
 
-      audio.onerror = (e) => {
+      audio.onerror = () => {
         this._isPlaying = false
         this.currentAudio = null
         reject(new Error('Audio playback error'))
@@ -71,7 +71,6 @@ class AudioManager {
   }
 
   clearCache(): void {
-    // Revoke all blob URLs to free memory
     this.audioCache.forEach((url) => URL.revokeObjectURL(url))
     this.audioCache.clear()
   }

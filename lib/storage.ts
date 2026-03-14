@@ -4,6 +4,7 @@ const SAVED_WORDS_KEY = 'englingo_saved_words'
 const DAILY_STATS_KEY = 'englingo_daily_stats'
 const TRANSLATION_CACHE_KEY = 'englingo_word_translations_cache'
 const LAST_SESSION_KEY = 'englingo_last_session'
+const AUDIO_SPEED_KEY = 'englingo_audio_speed'
 
 // ─── Last Practice Session ─────────────────────────────────────────────────
 
@@ -87,9 +88,11 @@ function getEmptyStats(): DailyStats {
     sentences_learned: 0,
     sentences_heard: 0,
     words_discovered: 0,
+    sentences_shadowed: 0,
     discovered_words_set: [],
     heard_sentences_set: [],
     learned_sentences_set: [],
+    shadowed_sentences_set: [],
   }
 }
 
@@ -161,6 +164,31 @@ export function updateDailyStats(partial: Partial<DailyStats>): DailyStats {
   const updated = { ...stats, ...partial }
   saveStats(updated)
   return updated
+}
+
+export function incrementSentenceShadowed(sentenceId: string): DailyStats {
+  const stats = getDailyStats()
+  if (stats.shadowed_sentences_set.includes(sentenceId)) return stats
+
+  const updated: DailyStats = {
+    ...stats,
+    sentences_shadowed: stats.sentences_shadowed + 1,
+    shadowed_sentences_set: [...stats.shadowed_sentences_set, sentenceId],
+  }
+  saveStats(updated)
+  return updated
+}
+
+// ─── Audio Speed Preference ───────────────────────────────────────────────
+
+export function getAudioSpeed(): number {
+  if (typeof window === 'undefined') return 1.0
+  const v = localStorage.getItem(AUDIO_SPEED_KEY)
+  return v ? parseFloat(v) : 1.0
+}
+
+export function setAudioSpeed(rate: number): void {
+  localStorage.setItem(AUDIO_SPEED_KEY, String(rate))
 }
 
 // ─── Translation Cache ────────────────────────────────────────────────────

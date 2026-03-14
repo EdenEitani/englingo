@@ -19,9 +19,11 @@ export interface DailyStats {
   sentences_learned: number
   sentences_heard: number
   words_discovered: number
+  sentences_shadowed: number
   discovered_words_set: string[]   // unique words clicked today
   heard_sentences_set: string[]    // sentence ids fully heard
   learned_sentences_set: string[]  // sentence ids counted as learned
+  shadowed_sentences_set: string[] // sentence ids shadowed today
 }
 
 export interface WordInteraction {

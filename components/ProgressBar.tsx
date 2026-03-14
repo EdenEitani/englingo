@@ -1,7 +1,7 @@
 'use client'
 
 import { DailyStats } from '@/lib/types'
-import { BookOpen, Headphones, Star } from 'lucide-react'
+import { BookOpen, Headphones, Star, Mic } from 'lucide-react'
 
 interface ProgressBarProps {
   stats: DailyStats
@@ -9,27 +9,34 @@ interface ProgressBarProps {
 
 export default function ProgressBar({ stats }: ProgressBarProps) {
   return (
-    <div className="grid grid-cols-3 gap-3 mb-6">
+    <div className="grid grid-cols-4 gap-2 mb-6">
       <StatCard
         icon={<BookOpen className="w-4 h-4" />}
         count={stats.sentences_learned}
-        englishLabel="Sentences Learned"
-        hebrewLabel="משפטים שנלמדו"
+        englishLabel="Learned"
+        hebrewLabel="נלמדו"
         color="indigo"
       />
       <StatCard
         icon={<Star className="w-4 h-4" />}
         count={stats.words_discovered}
         englishLabel="New Words"
-        hebrewLabel="מילים חדשות"
+        hebrewLabel="מילים"
         color="violet"
       />
       <StatCard
         icon={<Headphones className="w-4 h-4" />}
         count={stats.sentences_heard}
-        englishLabel="Full Listens"
-        hebrewLabel="האזנות שלמות"
+        englishLabel="Listened"
+        hebrewLabel="האזנות"
         color="sky"
+      />
+      <StatCard
+        icon={<Mic className="w-4 h-4" />}
+        count={stats.sentences_shadowed ?? 0}
+        englishLabel="Shadowed"
+        hebrewLabel="שאדואינג"
+        color="purple"
       />
     </div>
   )
@@ -40,7 +47,7 @@ interface StatCardProps {
   count: number
   englishLabel: string
   hebrewLabel: string
-  color: 'indigo' | 'violet' | 'sky'
+  color: 'indigo' | 'violet' | 'sky' | 'purple'
 }
 
 function StatCard({ icon, count, englishLabel, hebrewLabel, color }: StatCardProps) {
@@ -62,6 +69,12 @@ function StatCard({ icon, count, englishLabel, hebrewLabel, color }: StatCardPro
       iconBg: 'bg-sky-100',
       iconColor: 'text-sky-600',
       count: 'text-sky-700',
+    },
+    purple: {
+      bg: 'bg-purple-50',
+      iconBg: 'bg-purple-100',
+      iconColor: 'text-purple-600',
+      count: 'text-purple-700',
     },
   }
 
