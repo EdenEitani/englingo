@@ -61,28 +61,21 @@ interface ClozeCardProps {
   onStatsUpdate: (stats: DailyStats) => void
 }
 
-type CardState = 'loading' | 'ready' | 'answered' | 'replaying'
+type CardState = 'ready' | 'answered'
 
 export default function ClozeCard({ sentence, distractorPool, onStatsUpdate }: ClozeCardProps) {
   const target = pickTargetWord(sentence.text)
   const options = target ? buildOptions(target.cleanWord, distractorPool) : []
 
-  const [cardState, setCardState] = useState<CardState>('loading')
+  const [cardState, setCardState] = useState<CardState>('ready')
   const [chosen, setChosen] = useState<string | null>(null)
   const [replayState, setReplayState] = useState<'idle' | 'loading' | 'playing'>('idle')
 
-  // Auto-play the sentence when the card mounts
+  // Reset state when sentence changes (switching quiz cards is not used, but defensive)
   useEffect(() => {
-    let cancelled = false
-    audioManager.playText(sentence.text, 'sentence', () => {
-      if (!cancelled) setCardState('ready')
-    }).then(() => {
-      if (!cancelled) setCardState('ready')
-    }).catch(() => {
-      if (!cancelled) setCardState('ready')
-    })
-    return () => { cancelled = true }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    setCardState('ready')
+    setChosen(null)
+    setReplayState('idle')
   }, [sentence.id])
 
   const handleAnswer = useCallback((option: string) => {
@@ -107,11 +100,9 @@ export default function ClozeCard({ sentence, distractorPool, onStatsUpdate }: C
 
   const handleReset = useCallback(() => {
     setChosen(null)
-    setCardState('loading')
-    audioManager.playText(sentence.text, 'sentence', () => setCardState('ready'))
-      .then(() => setCardState('ready'))
-      .catch(() => setCardState('ready'))
-  }, [sentence.text])
+    setCardState('ready')
+    setReplayState('idle')
+  }, [])
 
   if (!target) return null
 
@@ -139,13 +130,13 @@ export default function ClozeCard({ sentence, distractorPool, onStatsUpdate }: C
           )}
           <button
             onClick={handleReplay}
-            disabled={replayState === 'loading' || cardState === 'loading'}
+            disabled={replayState === 'loading'}
             className={cn(
               'w-8 h-8 rounded-full flex items-center justify-center transition-all',
               replayState === 'playing' ? 'bg-indigo-600 text-white' : 'bg-indigo-50 text-indigo-600 hover:bg-indigo-100',
-              (replayState === 'loading' || cardState === 'loading') && 'opacity-50 cursor-wait'
+              replayState === 'loading' && 'opacity-50 cursor-wait'
             )}
-            aria-label="Replay sentence"
+            aria-label="Play sentence"
           >
             {replayState === 'loading' || cardState === 'loading' ? (
               <Loader2 className="w-3.5 h-3.5 animate-spin" />
@@ -183,10 +174,10 @@ export default function ClozeCard({ sentence, distractorPool, onStatsUpdate }: C
         })}
       </p>
 
-      {/* Loading hint */}
-      {cardState === 'loading' && (
-        <p className="text-xs text-indigo-500 text-center mb-3 animate-pulse">
-          🔊 Listen carefully…
+      {/* Listen hint */}
+      {cardState === 'ready' && replayState === 'idle' && !chosen && (
+        <p className="text-xs text-indigo-500 text-center mb-3">
+          🔊 Press play to listen, then pick the missing word
         </p>
       )}
 
