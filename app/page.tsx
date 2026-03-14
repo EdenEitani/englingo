@@ -6,7 +6,7 @@ import TopicInput from '@/components/TopicInput'
 import SentenceList from '@/components/SentenceList'
 import ProgressBar from '@/components/ProgressBar'
 import { GeneratedSentence, DailyStats } from '@/lib/types'
-import { getDailyStats, getSavedWords } from '@/lib/storage'
+import { getDailyStats, getSavedWords, getLastSession, saveLastSession } from '@/lib/storage'
 
 function PracticePageContent() {
   const searchParams = useSearchParams()
@@ -19,10 +19,15 @@ function PracticePageContent() {
   const [dailyStats, setDailyStats] = useState<DailyStats>(() => getDailyStats())
   const [savedWordsCount, setSavedWordsCount] = useState(0)
 
-  // Load initial data from localStorage on mount
+  // Restore last session + load stats on mount
   useEffect(() => {
     setDailyStats(getDailyStats())
     setSavedWordsCount(getSavedWords().length)
+    const last = getLastSession()
+    if (last) {
+      setTopic(last.topic)
+      setSentences(last.sentences)
+    }
   }, [])
 
   const handleGenerate = useCallback(async (topicToGenerate: string) => {
@@ -53,6 +58,7 @@ function PracticePageContent() {
       const reader = response.body.getReader()
       const decoder = new TextDecoder()
       let buffer = ''
+      const collected: GeneratedSentence[] = []
 
       while (true) {
         const { done, value } = await reader.read()
@@ -67,12 +73,16 @@ function PracticePageContent() {
           try {
             const parsed = JSON.parse(line)
             if (parsed.__error) throw new Error(parsed.__error)
+            collected.push(parsed)
             setSentences((prev) => [...prev, parsed])
           } catch (e) {
             if (e instanceof Error && e.message !== 'Unexpected end of JSON input') throw e
           }
         }
       }
+
+      // Persist session so it survives page navigation
+      if (collected.length > 0) saveLastSession(topicToGenerate, collected)
     } catch (err) {
       setError(err instanceof Error ? err.message : 'An unexpected error occurred')
     } finally {

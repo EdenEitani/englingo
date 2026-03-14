@@ -1,8 +1,36 @@
-import { SavedWord, DailyStats } from './types'
+import { SavedWord, DailyStats, GeneratedSentence } from './types'
 
 const SAVED_WORDS_KEY = 'englingo_saved_words'
 const DAILY_STATS_KEY = 'englingo_daily_stats'
 const TRANSLATION_CACHE_KEY = 'englingo_word_translations_cache'
+const LAST_SESSION_KEY = 'englingo_last_session'
+
+// ─── Last Practice Session ─────────────────────────────────────────────────
+
+export interface LastSession {
+  topic: string
+  sentences: GeneratedSentence[]
+  savedAt: string
+}
+
+export function getLastSession(): LastSession | null {
+  if (typeof window === 'undefined') return null
+  try {
+    const data = localStorage.getItem(LAST_SESSION_KEY)
+    return data ? JSON.parse(data) : null
+  } catch {
+    return null
+  }
+}
+
+export function saveLastSession(topic: string, sentences: GeneratedSentence[]): void {
+  const session: LastSession = { topic, sentences, savedAt: new Date().toISOString() }
+  localStorage.setItem(LAST_SESSION_KEY, JSON.stringify(session))
+}
+
+export function clearLastSession(): void {
+  localStorage.removeItem(LAST_SESSION_KEY)
+}
 
 function getTodayDate(): string {
   return new Date().toISOString().split('T')[0]
