@@ -15,6 +15,7 @@ function PracticePageContent() {
   const [topic, setTopic] = useState('')
   const [sentences, setSentences] = useState<GeneratedSentence[]>([])
   const [isGenerating, setIsGenerating] = useState(false)
+  const [isLoadingMore, setIsLoadingMore] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [dailyStats, setDailyStats] = useState<DailyStats>(() => getDailyStats())
   const [savedWordsCount, setSavedWordsCount] = useState(0)
@@ -90,6 +91,66 @@ function PracticePageContent() {
     }
   }, [])
 
+  const handleLoadMore = useCallback(async () => {
+    if (!topic || isLoadingMore) return
+
+    setIsLoadingMore(true)
+    try {
+      const savedWords = getSavedWords().map((w) => w.english)
+
+      const response = await fetch('/api/generate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          topic,
+          savedWords: savedWords.slice(0, 10),
+          loadMore: true,
+          existingCount: sentences.length,
+        }),
+      })
+
+      if (!response.ok || !response.body) throw new Error('Failed to load more sentences')
+
+      const reader = response.body.getReader()
+      const decoder = new TextDecoder()
+      let buffer = ''
+      const newSentences: GeneratedSentence[] = []
+
+      while (true) {
+        const { done, value } = await reader.read()
+        if (done) break
+
+        buffer += decoder.decode(value, { stream: true })
+        const lines = buffer.split('\n')
+        buffer = lines.pop() ?? ''
+
+        for (const line of lines) {
+          if (!line.trim()) continue
+          try {
+            const parsed = JSON.parse(line)
+            if (parsed.__error) throw new Error(parsed.__error)
+            newSentences.push(parsed)
+            setSentences((prev) => [...prev, parsed])
+          } catch (e) {
+            if (e instanceof Error && e.message !== 'Unexpected end of JSON input') throw e
+          }
+        }
+      }
+
+      if (newSentences.length > 0) {
+        setSentences((prev) => {
+          const updated = [...prev]
+          saveLastSession(topic, updated)
+          return updated
+        })
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'An unexpected error occurred')
+    } finally {
+      setIsLoadingMore(false)
+    }
+  }, [topic, isLoadingMore, sentences.length])
+
   // Handle topic from URL param (e.g., from Saved Words "Practice" button)
   useEffect(() => {
     const topicParam = searchParams.get('topic')
@@ -125,10 +186,12 @@ function PracticePageContent() {
       <SentenceList
         sentences={sentences}
         isLoading={isGenerating}
+        isLoadingMore={isLoadingMore}
         topic={topic}
         error={error}
         onStatsUpdate={handleStatsUpdate}
         onWordSaved={handleWordSaved}
+        onLoadMore={handleLoadMore}
       />
 
       {/* Saved words quick link */}

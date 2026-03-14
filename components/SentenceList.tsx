@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { BookOpen, Headphones } from 'lucide-react'
+import { BookOpen, Headphones, Loader2 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { GeneratedSentence, DailyStats } from '@/lib/types'
 import SentenceCard from './SentenceCard'
@@ -15,10 +15,12 @@ type Mode = 'practice' | 'quiz'
 interface SentenceListProps {
   sentences: GeneratedSentence[]
   isLoading: boolean
+  isLoadingMore?: boolean
   topic: string
   error: string | null
   onStatsUpdate: (stats: DailyStats) => void
   onWordSaved: () => void
+  onLoadMore?: () => void
 }
 
 function getDistractorPool(sentences: GeneratedSentence[], excludeId: string): string[] {
@@ -39,10 +41,12 @@ function getDistractorPool(sentences: GeneratedSentence[], excludeId: string): s
 export default function SentenceList({
   sentences,
   isLoading,
+  isLoadingMore = false,
   topic,
   error,
   onStatsUpdate,
   onWordSaved,
+  onLoadMore,
 }: SentenceListProps) {
   const [mode, setMode] = useState<Mode>('practice')
 
@@ -145,6 +149,34 @@ export default function SentenceList({
             onWordSaved={onWordSaved}
           />
         )
+      )}
+
+      {/* Load More */}
+      {onLoadMore && !isLoading && sentences.length > 0 && mode === 'practice' && (
+        <div className="pt-2 text-center">
+          <button
+            onClick={onLoadMore}
+            disabled={isLoadingMore}
+            className={cn(
+              'inline-flex items-center gap-2 px-5 py-2.5 rounded-full text-sm font-medium transition-all',
+              isLoadingMore
+                ? 'bg-indigo-100 text-indigo-400 cursor-wait'
+                : 'bg-indigo-50 text-indigo-600 hover:bg-indigo-100 hover:shadow-sm'
+            )}
+          >
+            {isLoadingMore ? (
+              <>
+                <Loader2 className="w-4 h-4 animate-spin" />
+                Loading…
+              </>
+            ) : (
+              'Load 5 more →'
+            )}
+          </button>
+          {isLoadingMore && (
+            <p className="text-xs text-gray-400 mt-1">Generating harder sentences…</p>
+          )}
+        </div>
       )}
     </div>
   )

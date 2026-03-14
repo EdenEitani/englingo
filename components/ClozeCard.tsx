@@ -138,7 +138,7 @@ export default function ClozeCard({ sentence, distractorPool, onStatsUpdate }: C
             )}
             aria-label="Play sentence"
           >
-            {replayState === 'loading' || cardState === 'loading' ? (
+            {replayState === 'loading' ? (
               <Loader2 className="w-3.5 h-3.5 animate-spin" />
             ) : (
               <Volume2 className="w-3.5 h-3.5" />

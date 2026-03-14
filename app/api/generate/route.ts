@@ -3,7 +3,7 @@ import { streamSentences } from '@/lib/openai'
 
 export async function POST(request: NextRequest) {
   const body = await request.json()
-  const { topic, savedWords } = body
+  const { topic, savedWords, loadMore, existingCount } = body
 
   if (!topic || typeof topic !== 'string' || topic.trim().length === 0) {
     return new Response(JSON.stringify({ error: 'Topic is required' }), {
@@ -26,7 +26,7 @@ export async function POST(request: NextRequest) {
   const readable = new ReadableStream({
     async start(controller) {
       try {
-        for await (const sentence of streamSentences(topic.trim(), savedWords)) {
+        for await (const sentence of streamSentences(topic.trim(), { savedWords, loadMore: !!loadMore, existingCount: existingCount ?? 0 })) {
           controller.enqueue(encoder.encode(JSON.stringify(sentence) + '\n'))
         }
       } catch (error) {

@@ -200,6 +200,7 @@ export default function SentenceCard({
             word={word}
             topic={topic}
             sentenceId={sentence.id}
+            sentenceText={sentence.text}
             onStatsUpdate={onStatsUpdate}
             onWordSaved={onWordSaved}
           />

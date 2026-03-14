@@ -86,6 +86,7 @@ export default function StoryParagraph({
               word={word}
               topic={storyTitle}
               sentenceId={paragraphId}
+              sentenceText={text}
               onStatsUpdate={onStatsUpdate}
               onWordSaved={onWordSaved}
             />

@@ -19,6 +19,7 @@ interface WordChipProps {
   word: string
   topic: string
   sentenceId: string
+  sentenceText: string   // full sentence for context-aware translation
   onStatsUpdate: (stats: DailyStats) => void
   onWordSaved: () => void
 }
@@ -27,6 +28,7 @@ export default function WordChip({
   word,
   topic,
   sentenceId,
+  sentenceText,
   onStatsUpdate,
   onWordSaved,
 }: WordChipProps) {
@@ -54,8 +56,10 @@ export default function WordChip({
     const withSentence = incrementSentenceLearned(sentenceId)
     onStatsUpdate({ ...updatedStats, ...withSentence })
 
-    // Get translation (check cache first)
-    const cached = getTranslationFromCache(cleanWord)
+    // Cache key includes sentenceId so the same word in different sentences
+    // can have different context-aware translations
+    const cacheKey = `${cleanWord}:${sentenceId}`
+    const cached = getTranslationFromCache(cacheKey)
     if (cached) {
       setHebrew(cached)
       return
@@ -66,13 +70,13 @@ export default function WordChip({
       const response = await fetch('/api/translate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ word: cleanWord }),
+        body: JSON.stringify({ word: cleanWord, context: sentenceText }),
       })
 
       if (response.ok) {
         const data = await response.json()
         setHebrew(data.translation)
-        setTranslationCache(cleanWord, data.translation)
+        setTranslationCache(cacheKey, data.translation)
       } else {
         setHebrew(null)
       }

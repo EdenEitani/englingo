@@ -4,13 +4,13 @@ import { translateToHebrew } from '@/lib/translate'
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
-    const { word } = body
+    const { word, context } = body
 
     if (!word || typeof word !== 'string' || word.trim().length === 0) {
       return NextResponse.json({ error: 'Word is required' }, { status: 400 })
     }
 
-    const translation = await translateToHebrew(word.trim())
+    const translation = await translateToHebrew(word.trim(), context?.trim())
 
     return NextResponse.json({ translation })
   } catch (error) {

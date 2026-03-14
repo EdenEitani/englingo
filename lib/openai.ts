@@ -4,14 +4,12 @@ import { GeneratedSentence } from './types'
 
 const ollama = new OpenAI({
   baseURL: process.env.OLLAMA_BASE_URL || 'http://localhost:11434/v1',
-  apiKey: 'ollama', // required by SDK but ignored by Ollama
+  apiKey: 'ollama',
 })
 
 const MODEL = process.env.OLLAMA_MODEL || 'llama3'
 
-// Concise prompt that outputs JSONL — one sentence per line, no wrapper object.
-// Keeps the output small so the model finishes fast and we can stream early.
-const SYSTEM_PROMPT = `You are an English teacher. Output exactly 5 sentences as JSONL.
+const BASE_SYSTEM_PROMPT = `You are an English teacher. Output exactly 5 sentences as JSONL.
 One JSON object per line, nothing else — no intro, no explanation, no markdown.
 Each line must be a complete valid JSON object in this exact format:
 {"id":"s1","text":"Sentence here.","difficulty":"beginner","length_category":"short","keyword_focus":"word"}
@@ -23,23 +21,48 @@ Rules:
 - Natural modern English, relevant to the topic, not too complex
 - Output lines immediately as you go — do not wait`
 
-// Async generator: yields each sentence as soon as Ollama outputs a complete JSON line.
-// This lets the API route stream sentences to the browser one by one.
+// Used when the user clicks "Load More" — harder and longer than the initial batch
+function buildLoadMorePrompt(existingCount: number): string {
+  const nextId = existingCount + 1
+  return `You are an English teacher. Output exactly 5 MORE sentences as JSONL.
+One JSON object per line, nothing else — no intro, no explanation, no markdown.
+Each line must be a complete valid JSON object in this exact format:
+{"id":"s${nextId}","text":"Sentence here.","difficulty":"easy-intermediate","length_category":"medium","keyword_focus":"word"}
+
+Rules:
+- ids: "s${nextId}" through "s${nextId + 4}"
+- difficulty: "easy-intermediate" (×2), "intermediate" (×3) — NO beginners, must be harder
+- length_category: "medium" 9-14 words (×2), "long" 15-20 words (×3) — longer than before
+- Explore different aspects of the topic not yet covered
+- Use richer vocabulary, more natural phrasing, varied sentence structures
+- Natural modern English
+- Output lines immediately as you go — do not wait`
+}
+
+export interface StreamOptions {
+  loadMore?: boolean
+  existingCount?: number
+  savedWords?: string[]
+}
+
 export async function* streamSentences(
   topic: string,
-  savedWords?: string[]
+  options: StreamOptions = {}
 ): AsyncGenerator<GeneratedSentence> {
-  const userPrompt =
-    savedWords && savedWords.length > 0
-      ? `Topic: ${topic}. Try to use some of these words: ${savedWords.slice(0, 5).join(', ')}`
-      : `Topic: ${topic}`
+  const { loadMore = false, existingCount = 0, savedWords } = options
+
+  const systemPrompt = loadMore ? buildLoadMorePrompt(existingCount) : BASE_SYSTEM_PROMPT
+
+  const userPrompt = savedWords && savedWords.length > 0
+    ? `Topic: ${topic}. Try to use some of these words: ${savedWords.slice(0, 5).join(', ')}`
+    : `Topic: ${topic}`
 
   const stream = await ollama.chat.completions.create({
     model: MODEL,
     temperature: 0.7,
     stream: true,
     messages: [
-      { role: 'system', content: SYSTEM_PROMPT },
+      { role: 'system', content: systemPrompt },
       { role: 'user', content: userPrompt },
     ],
   })
@@ -50,33 +73,29 @@ export async function* streamSentences(
     const delta = chunk.choices[0]?.delta?.content ?? ''
     buffer += delta
 
-    // Emit each complete line as a parsed sentence
     const lines = buffer.split('\n')
-    buffer = lines.pop() ?? '' // keep incomplete last line in buffer
+    buffer = lines.pop() ?? ''
 
     for (const line of lines) {
       const trimmed = line.trim()
       if (!trimmed || trimmed.startsWith('//') || trimmed.startsWith('#')) continue
-      // Strip accidental markdown fences
       const clean = trimmed.replace(/^```(?:json)?\s*/i, '').replace(/```$/, '').trim()
       if (!clean.startsWith('{')) continue
       try {
         const sentence = JSON.parse(clean) as GeneratedSentence
         if (sentence.id && sentence.text) yield sentence
       } catch {
-        // Malformed line — skip
+        // skip malformed line
       }
     }
   }
 
-  // Flush any remaining buffered content
+  // Flush remaining buffer
   const trimmed = buffer.trim()
   if (trimmed.startsWith('{')) {
     try {
       const sentence = JSON.parse(trimmed) as GeneratedSentence
       if (sentence.id && sentence.text) yield sentence
-    } catch {
-      // ignore
-    }
+    } catch { /* ignore */ }
   }
 }
