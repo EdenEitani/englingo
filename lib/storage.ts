@@ -5,6 +5,7 @@ const DAILY_STATS_KEY = 'englingo_daily_stats'
 const TRANSLATION_CACHE_KEY = 'englingo_word_translations_cache'
 const LAST_SESSION_KEY = 'englingo_last_session'
 const AUDIO_SPEED_KEY = 'englingo_audio_speed'
+const FONT_SIZE_KEY = 'englingo_font_size'
 
 // ─── Last Practice Session ─────────────────────────────────────────────────
 
@@ -189,6 +190,19 @@ export function getAudioSpeed(): number {
 
 export function setAudioSpeed(rate: number): void {
   localStorage.setItem(AUDIO_SPEED_KEY, String(rate))
+}
+
+// ─── Font Size Preference ─────────────────────────────────────────────────
+
+export type FontSize = 'sm' | 'md' | 'lg'
+
+export function getFontSize(): FontSize {
+  if (typeof window === 'undefined') return 'md'
+  return (localStorage.getItem(FONT_SIZE_KEY) as FontSize) ?? 'md'
+}
+
+export function setFontSize(size: FontSize): void {
+  localStorage.setItem(FONT_SIZE_KEY, size)
 }
 
 // ─── Translation Cache ────────────────────────────────────────────────────

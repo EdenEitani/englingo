@@ -3,6 +3,12 @@
 :root {
   --background: #f8fafc;
   --foreground: #1e293b;
+  --reading-font-size: 1rem; /* controlled by FontSizeControl */
+}
+
+/* Reading text respects the font size preference */
+.reading-text {
+  font-size: var(--reading-font-size);
 }
 
 body {

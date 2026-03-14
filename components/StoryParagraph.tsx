@@ -79,7 +79,7 @@ export default function StoryParagraph({
         </div>
 
         {/* Paragraph text with clickable words */}
-        <p className="text-gray-700 text-base leading-8 flex-1">
+        <p className="reading-text text-gray-700 leading-8 flex-1">
           {words.map((word, i) => (
             <WordChip
               key={`${paragraphId}-w${i}`}

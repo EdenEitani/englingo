@@ -193,7 +193,7 @@ export default function SentenceCard({
       )}
 
       {/* Sentence text with clickable words */}
-      <div className="text-gray-800 text-base sm:text-lg leading-relaxed font-medium">
+      <div className="reading-text text-gray-800 leading-relaxed font-medium">
         {words.map((word, index) => (
           <WordChip
             key={`${sentence.id}-word-${index}`}

@@ -7,6 +7,7 @@ import { GeneratedSentence, DailyStats } from '@/lib/types'
 import SentenceCard from './SentenceCard'
 import ClozeCard from './ClozeCard'
 import SpeedControl from './SpeedControl'
+import FontSizeControl from './FontSizeControl'
 import EmptyState from './EmptyState'
 
 type Mode = 'practice' | 'quiz'
@@ -80,6 +81,9 @@ export default function SentenceList({
         </h2>
 
         <div className="flex items-center gap-3">
+          {/* Font size */}
+          <FontSizeControl />
+
           {/* Speed control */}
           <SpeedControl />
 
