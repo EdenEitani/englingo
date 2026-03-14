@@ -57,7 +57,8 @@ export default function RootLayout({
             {/* Nav links */}
             <nav className="flex items-center gap-1">
               <NavLink href="/" label="Practice" hebrewLabel="תרגול" />
-              <NavLink href="/saved" label="Saved Words" hebrewLabel="מילים שמורות" />
+              <NavLink href="/stories" label="Stories" hebrewLabel="סיפורים" />
+              <NavLink href="/saved" label="Saved" hebrewLabel="שמורות" />
             </nav>
           </div>
         </header>
